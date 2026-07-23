@@ -301,6 +301,50 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.error { background: var(--danger); }
 
+  /* Submit confirmation */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(28,28,26,0.55);
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+    z-index: 200;
+  }
+  .overlay.show { display: flex; }
+  .result-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 34px 34px 28px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .result-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800;
+    background: var(--olive-soft); color: var(--olive-deep);
+  }
+  .result-card.is-error .result-icon { background: var(--danger-soft); color: var(--danger); }
+  .result-title { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .result-text { font-size: 14px; color: var(--ink-soft); margin-bottom: 22px; }
+  .result-text .detail {
+    display: block; margin-top: 10px; font-family: var(--mono);
+    font-size: 11px; color: var(--muted); word-break: break-word;
+  }
+  .spinner {
+    width: 34px; height: 34px; margin: 4px auto 18px;
+    border: 3px solid var(--hairline);
+    border-top-color: var(--olive-deep);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn[disabled] { opacity: .55; cursor: not-allowed; }
+
   @media (max-width: 640px) {
     .row { flex-direction: column; gap: 0; }
     .char-grid { grid-template-columns: repeat(2, 1fr); }
@@ -327,8 +371,8 @@
 
 <div class="page">
 
-  <!-- 1. PROJECT INFO -->
-  <div class="card">
+  <!-- PROJECT INFO -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">1</div>
       <h2>Project info</h2>
@@ -386,8 +430,23 @@
     </div>
   </div>
 
-  <!-- 2. CHARACTER -->
-  <div class="card">
+  <!-- CONTENT TYPE -->
+  <div class="card" data-step>
+    <div class="section-head">
+      <div class="num">2</div>
+      <h2>Content type</h2>
+      <span class="step-label">Step 2 / 8</span>
+    </div>
+    <label style="margin-bottom:10px;">Is this video practical or theoretical <span class="req">*</span></label>
+    <div class="tab-switch">
+      <button type="button" class="tab-btn active" id="tab-btn-practical" onclick="switchTab('practical')">Practical</button>
+      <button type="button" class="tab-btn" id="tab-btn-theoretical" onclick="switchTab('theoretical')">Theoretical</button>
+    </div>
+    <div class="hint">Practical videos follow a step-by-step procedure and use a fixed character. Theoretical videos are narrated and have no fixed character.</div>
+  </div>
+
+  <!-- CHARACTER -->
+  <div class="card" data-step id="card-character">
     <div class="section-head">
       <div class="num">2</div>
       <h2>Character</h2>
@@ -421,8 +480,8 @@
     </div>
   </div>
 
-  <!-- 3. OBJECTIVE -->
-  <div class="card">
+  <!-- OBJECTIVE -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">3</div>
       <h2>Objective</h2>
@@ -434,8 +493,8 @@
     </div>
   </div>
 
-  <!-- 4. OUTCOMES -->
-  <div class="card">
+  <!-- OUTCOMES -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">4</div>
       <h2>Outcomes</h2>
@@ -446,17 +505,12 @@
     <button type="button" class="btn btn-add" onclick="addOutcome()">+ Add outcome</button>
   </div>
 
-  <!-- 5. PRACTICAL / THEORETICAL -->
-  <div class="card">
+  <!-- CONTENT -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">5</div>
       <h2>Content</h2>
       <span class="step-label">Step 5 / 7</span>
-    </div>
-
-    <div class="tab-switch">
-      <button type="button" class="tab-btn active" id="tab-btn-practical" onclick="switchTab('practical')">Practical</button>
-      <button type="button" class="tab-btn" id="tab-btn-theoretical" onclick="switchTab('theoretical')">Theoretical</button>
     </div>
 
     <!-- PRACTICAL PANEL -->
@@ -472,8 +526,8 @@
     </div>
   </div>
 
-  <!-- 6. REFERENCE PHOTOS -->
-  <div class="card">
+  <!-- REFERENCE PHOTOS -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">6</div>
       <h2>Reference photos</h2>
@@ -484,8 +538,8 @@
     <div class="photo-list" id="uc-file-list"></div>
   </div>
 
-  <!-- 7. NOTES & CONSTRAINTS -->
-  <div class="card">
+  <!-- NOTES & CONSTRAINTS -->
+  <div class="card" data-step>
     <div class="section-head">
       <div class="num">7</div>
       <h2>Notes &amp; constraints <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">(optional)</span></h2>
@@ -506,9 +560,19 @@
   </div>
 
   <div class="submit-bar">
-    <button type="button" class="btn btn-primary" onclick="submitBrief()">Submit brief</button>
+    <button type="button" class="btn btn-primary" id="submit-btn" onclick="submitBrief()">Submit brief</button>
   </div>
 
+</div>
+
+<div class="overlay" id="submit-overlay">
+  <div class="result-card" id="result-card">
+    <div class="spinner" id="result-spinner"></div>
+    <div class="result-icon" id="result-icon" style="display:none;">&#10003;</div>
+    <div class="result-title" id="result-title">Submitting your brief</div>
+    <div class="result-text" id="result-text">Please wait a moment.</div>
+    <button type="button" class="btn btn-primary" id="result-btn" style="display:none;" onclick="closeResult()">Submit another brief</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -651,6 +715,31 @@
     document.getElementById('tab-btn-theoretical').classList.toggle('active', tab === 'theoretical');
     document.getElementById('panel-practical').classList.toggle('active', tab === 'practical');
     document.getElementById('panel-theoretical').classList.toggle('active', tab === 'theoretical');
+
+    // Theoretical videos have no fixed character: hide the section entirely and
+    // clear any earlier selection so an empty character is submitted.
+    const charCard = document.getElementById('card-character');
+    if (tab === 'theoretical') {
+      charCard.style.display = 'none';
+      selectedCharacter = null;
+      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    } else {
+      charCard.style.display = '';
+    }
+    renumberSteps();
+  }
+
+  // Keeps the card numbers and "Step X / Y" labels consecutive when a card is
+  // hidden, so the form never appears to skip a step.
+  function renumberSteps() {
+    const cards = Array.from(document.querySelectorAll('.card[data-step]'))
+      .filter(c => c.style.display !== 'none');
+    cards.forEach((card, i) => {
+      const num = card.querySelector('.section-head .num');
+      const label = card.querySelector('.section-head .step-label');
+      if (num) num.textContent = (i + 1);
+      if (label) label.textContent = 'Step ' + (i + 1) + ' / ' + cards.length;
+    });
   }
 
   /* ─── PRACTICAL: Environment → Scene → Action ─── */
@@ -899,7 +988,7 @@
   }
 
   /* ─── Submit ─── */
-  const WEBHOOK_URL_POST = 'https://script.google.com/macros/s/AKfycbzN03ZQd92lzGtx8U6hosoUyW447vRugTF81EaVXcRJiUjWTmmxagA2knVjGcIQ1La6/exec'; // Karama Apps Script backend
+  const WEBHOOK_URL_POST = 'https://script.google.com/macros/s/AKfycbzEKzUQTIY9OsFb4A1pMVjF0ZCTvafea3P-XZ2n7Cd7DEFMXtwJUkKE1GQZSTMhuCHv/exec'; // Karama Apps Script backend
   const WEBHOOK_URL_GET = '';  // not needed — no client list, products are embedded in this file
 
   async function loadFormData() {
@@ -961,8 +1050,8 @@
       module: videoInfo.module,
       videoTitle: videoInfo.videoTitle,
       videoPart: videoInfo.videoPart,
-      character: selectedCharacter,
-      uniform: document.getElementById('f-uniform').value,
+      character: activeTab === 'theoretical' ? '' : (selectedCharacter || ''),
+      uniform: activeTab === 'theoretical' ? '' : document.getElementById('f-uniform').value,
       objective: document.getElementById('f-objective').value,
       outcomes: outcomes,
       ...content,
@@ -973,26 +1062,89 @@
     };
   }
 
+  /* ─── Submit confirmation ─── */
+  function openResultPending() {
+    document.getElementById('result-card').classList.remove('is-error');
+    document.getElementById('result-spinner').style.display = 'block';
+    document.getElementById('result-icon').style.display = 'none';
+    document.getElementById('result-btn').style.display = 'none';
+    document.getElementById('result-title').textContent = 'Submitting your brief';
+    document.getElementById('result-text').textContent = 'Please wait a moment — this can take up to a minute.';
+    document.getElementById('submit-overlay').classList.add('show');
+  }
+
+  function showResult(ok, title, text, detail) {
+    const card = document.getElementById('result-card');
+    card.classList.toggle('is-error', !ok);
+    document.getElementById('result-spinner').style.display = 'none';
+    const icon = document.getElementById('result-icon');
+    icon.innerHTML = ok ? '&#10003;' : '!';
+    icon.style.display = 'flex';
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('result-text').innerHTML =
+      text + (detail ? '<span class="detail">' + detail + '</span>' : '');
+    const btn = document.getElementById('result-btn');
+    btn.textContent = ok ? 'Submit another brief' : 'Back to the form';
+    btn.style.display = 'inline-flex';
+    document.getElementById('submit-overlay').classList.add('show');
+  }
+
+  // Success starts a fresh form; an error just returns to the filled-in form so
+  // nothing the person typed is lost.
+  function closeResult() {
+    const wasSuccess = !document.getElementById('result-card').classList.contains('is-error');
+    document.getElementById('submit-overlay').classList.remove('show');
+    if (wasSuccess) location.reload();
+  }
+
   async function submitBrief() {
     const data = collectBriefData();
     if (!data.title || !data.author || !data.sector || !data.videoTitle || !data.email) {
       showToast('Please fill in the required fields', true);
       return;
     }
-    if (!WEBHOOK_URL_POST) {
-      console.log('BRIEF DATA', data);
-      showToast('n8n webhook not connected yet — data logged to console');
+    if (data.contentType === 'practical' && !data.character) {
+      showToast('Please select a character', true);
       return;
     }
+    if (!WEBHOOK_URL_POST) {
+      console.log('BRIEF DATA', data);
+      showToast('Webhook not connected yet — data logged to console');
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;                 // guards against a double submission
+    openResultPending();
+
     try {
-      await fetch(WEBHOOK_URL_POST, {
+      const res = await fetch(WEBHOOK_URL_POST, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(data)
       });
-      showToast('Brief submitted');
+
+      // The backend replies with {status:'ok'} or {status:'error', message}.
+      // If the body isn't readable, a 2xx still counts as delivered.
+      let payload = null;
+      try { payload = JSON.parse(await res.text()); } catch (e) { /* ignore */ }
+
+      if (payload && payload.status === 'error') {
+        showResult(false, 'Submission failed',
+          'The brief reached the server but could not be saved. Please try again.',
+          payload.message || '');
+      } else if (payload || res.ok) {
+        showResult(true, 'Brief submitted',
+          'Thank you — "' + data.title + '" has been received and added to the production sheet.');
+      } else {
+        showResult(false, 'Submission failed',
+          'The server rejected the request. Please try again.', 'HTTP ' + res.status);
+      }
     } catch (e) {
-      showToast('Submission failed', true);
+      showResult(false, 'Submission failed',
+        'Your brief could not be sent. Check your connection and try again.', e.message || '');
+    } finally {
+      btn.disabled = false;
     }
   }
 
@@ -1005,6 +1157,7 @@
   addOutcome();
   addEnv();
   addTheoreticalScene();
+  renumberSteps();
 </script>
 </body>
 </html>
